@@ -60,7 +60,10 @@ export default {
       const result=await response.json();
       if(!response.ok) throw new Error(result.error || 'HTTP game bị từ chối.');
       return {status:result.status,headers:result.headers,bytes:new Int8Array(Uint8Array.from(atob(result.body),c=>c.charCodeAt(0)).buffer)};
-    } catch(error) {notice(error.message);return {status:0,error:error.message};}
+    } catch(error) {
+      let destination='HTTP'; try {destination=new URL(url).host;} catch {}
+      notice(destination+': '+error.message);return {status:0,error:error.message};
+    }
   },
   async Java_pl_zb3_freej2me_bridge_network_NetworkBridge_status(lib,r) {return r.status;},
   async Java_pl_zb3_freej2me_bridge_network_NetworkBridge_header(lib,r,name) {return r.headers?.[name.toLowerCase()] ?? null;},

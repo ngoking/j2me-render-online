@@ -65,6 +65,23 @@ for name in ['launcher.js', 'main.js']:
     console.error(error);
     document.getElementById("loading").textContent = "Không tải được giả lập: " + error.message;
 });''')
+    else:
+        text = text.replace('function setListeners() {', '''function pointerPosition(point) {
+    const bounds = display.getBoundingClientRect();
+    return {
+        x: ((point.clientX - bounds.left) * display.width / bounds.width) | 0,
+        y: ((point.clientY - bounds.top) * display.height / bounds.height) | 0,
+    };
+}
+
+function setListeners() {''')
+        text = text.replace('''x: e.offsetX / display.currentCSSZoom | 0,
+            y: e.offsetY / display.currentCSSZoom | 0,''', '...pointerPosition(e),')
+        text = text.replace('''x: (e.pageX - display.offsetLeft) / display.currentCSSZoom | 0,
+            y: (e.pageY - display.offsetTop) / display.currentCSSZoom | 0,''', '...pointerPosition(e),')
+        text = text.replace('''x: (e.changedTouches[0].pageX - display.offsetLeft) / display.currentCSSZoom | 0,
+            y: (e.changedTouches[0].pageY - display.offsetTop) / display.currentCSSZoom | 0,''', '...pointerPosition(e.changedTouches[0]),')
+        assert 'display.currentCSSZoom' not in text
     script.write_text(text, encoding='utf-8')
 
 (upstream/'web/diagnostics.html').write_text('''<!doctype html>
