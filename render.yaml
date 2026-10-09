@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: j2me-online
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /healthz
+    autoDeployTrigger: off
