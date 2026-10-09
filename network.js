@@ -21,7 +21,7 @@ export default {
     const timer=setTimeout(()=>{fail(s,'Kết nối máy chủ game quá thời gian.');s.ws.close();finish();},15000);
     s.ws.onmessage=event=>{
       if(typeof event.data==='string') {
-        try { const info=JSON.parse(event.data); if(info.type==='ready'){clearTimeout(timer);finish();} else if(info.type==='error'){fail(s,info.message);clearTimeout(timer);finish();} } catch {fail(s,'Phản hồi mạng không hợp lệ.');finish();}
+        try { const info=JSON.parse(event.data); if(info.type==='ready'){document.getElementById('network-notice')?.remove();clearTimeout(timer);finish();} else if(info.type==='error'){fail(s,info.message);clearTimeout(timer);finish();} } catch {fail(s,'Phản hồi mạng không hợp lệ.');finish();}
       } else {
         const bytes=new Uint8Array(event.data);
         if(s.size+bytes.length>limit) {fail(s,'Bộ đệm mạng đầy.');s.ws.close();return;}

@@ -8,7 +8,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const root=path.dirname(fileURLToPath(import.meta.url));
-const defaults=Array.from({length:11},(_,i)=>`dragon${i+1}.teamobi.com:14445`).concat(['dragon10.teamobi.com:14446','dragon10.teamobi.com:14447','dragonwar.teamobi.com:20000','dragon.indonaga.com:14445','dragon.indonaga.com:14446']);
+const defaults=Array.from({length:11},(_,i)=>`dragon${i+1}.teamobi.com:14445`).concat(['dragon15.teamobi.com:14445','dragon10.teamobi.com:14446','dragon10.teamobi.com:14447','dragonwar.teamobi.com:20000','dragon.indonaga.com:14445','dragon.indonaga.com:14446']);
 const httpHosts=new Set(['ngocrongonline.com','www.ngocrongonline.com','dragonball.indonaga.com','world.teamobi.com']);
 export function publicIPv4(ip) {
   if(net.isIP(ip)!==4) return false;

@@ -89,6 +89,7 @@ function setListeners() {''')
 <title>Kiểm tra kết nối J2ME</title>
 <style>body{font:16px system-ui;max-width:600px;margin:32px auto;padding:16px}button{padding:12px;margin:8px}pre{white-space:pre-wrap;background:#eee;padding:16px}</style>
 <h1>Kiểm tra kết nối</h1><p>Thử đường mạng tới web và máy chủ game. Không cần tài khoản.</p>
+<label>Máy chủ: <select id="server" aria-label="Máy chủ"><option value="dragon1.teamobi.com">Vũ trụ 1</option><option value="dragon15.teamobi.com" selected>Vũ trụ 15</option></select></label>
 <button id="http">Kiểm tra HTTP</button><button id="jar">Kiểm tra tải giả lập</button><button id="ws">Kiểm tra WebSocket</button>
 <pre id="result" role="status">Chọn một phép kiểm tra.</pre><a href="/">Về trang game</a>
 <script>
@@ -99,8 +100,9 @@ for(const [id,url] of [['http','/healthz'],['jar','/freej2me-web.jar']]) documen
  catch(e){result.textContent=url+': '+e.name+' - '+e.message;}
 };
 document.getElementById('ws').onclick=()=>{
- result.textContent='Đang mở WebSocket tới dragon1.teamobi.com:14445';
- const w=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/socket?host=dragon1.teamobi.com&port=14445&secure=0');
+ const gameHost=document.getElementById('server').value;
+ result.textContent='Đang mở WebSocket tới '+gameHost+':14445';
+ const w=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/socket?host='+encodeURIComponent(gameHost)+'&port=14445&secure=0');
  const timer=setTimeout(()=>{result.textContent='WebSocket quá thời gian';w.close()},15000);
  w.onmessage=e=>{if(typeof e.data==='string'){clearTimeout(timer);result.textContent='WebSocket: '+e.data;w.close()}};
  w.onerror=()=>{clearTimeout(timer);result.textContent='WebSocket bị lỗi trong trình duyệt'};
