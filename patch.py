@@ -43,10 +43,15 @@ page.write_text(text,encoding='utf-8')
 # /str is CheerpJ's transient, read-only Java filesystem.
 library_loader = '''
 async function loadEmulatorLibrary() {
+    try {
     const response = await fetch("/freej2me-web.jar", {signal: AbortSignal.timeout(60000)});
     if (!response.ok) throw new Error("Could not download emulator: HTTP " + response.status);
     cheerpOSAddStringFile("/str/freej2me-web.jar", new Uint8Array(await response.arrayBuffer()));
     return cheerpjRunLibrary("/str/freej2me-web.jar");
+    } catch (error) {
+        console.warn("Direct emulator download failed; trying Java filesystem", error.message);
+        return cheerpjRunLibrary(cheerpjWebRoot + "/freej2me-web.jar");
+    }
 }
 '''
 for name in ['launcher.js', 'main.js']:
@@ -61,3 +66,26 @@ for name in ['launcher.js', 'main.js']:
     document.getElementById("loading").textContent = "Không tải được giả lập: " + error.message;
 });''')
     script.write_text(text, encoding='utf-8')
+
+(upstream/'web/diagnostics.html').write_text('''<!doctype html>
+<html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kiểm tra kết nối J2ME</title>
+<style>body{font:16px system-ui;max-width:600px;margin:32px auto;padding:16px}button{padding:12px;margin:8px}pre{white-space:pre-wrap;background:#eee;padding:16px}</style>
+<h1>Kiểm tra kết nối</h1><p>Thử đường mạng tới web và máy chủ game. Không cần tài khoản.</p>
+<button id="http">Kiểm tra HTTP</button><button id="jar">Kiểm tra tải giả lập</button><button id="ws">Kiểm tra WebSocket</button>
+<pre id="result" role="status">Chọn một phép kiểm tra.</pre><a href="/">Về trang game</a>
+<script>
+const result=document.getElementById('result');
+for(const [id,url] of [['http','/healthz'],['jar','/freej2me-web.jar']]) document.getElementById(id).onclick=async()=>{
+ result.textContent='Đang kiểm tra '+url;
+ try{const r=await fetch(url,{signal:AbortSignal.timeout(20000)});const b=await r.arrayBuffer();result.textContent=url+': HTTP '+r.status+', nhận '+b.byteLength+' byte';}
+ catch(e){result.textContent=url+': '+e.name+' - '+e.message;}
+};
+document.getElementById('ws').onclick=()=>{
+ result.textContent='Đang mở WebSocket tới dragon1.teamobi.com:14445';
+ const w=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/socket?host=dragon1.teamobi.com&port=14445&secure=0');
+ const timer=setTimeout(()=>{result.textContent='WebSocket quá thời gian';w.close()},15000);
+ w.onmessage=e=>{if(typeof e.data==='string'){clearTimeout(timer);result.textContent='WebSocket: '+e.data;w.close()}};
+ w.onerror=()=>{clearTimeout(timer);result.textContent='WebSocket bị lỗi trong trình duyệt'};
+};
+</script></html>''',encoding='utf-8')
