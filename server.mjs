@@ -25,6 +25,18 @@ export function createGateway({webRoot=process.env.WEB_ROOT || path.join(root,'w
     if(!entries.length || entries.some(item=>!publicIPv4(item.address))) throw new Error('Địa chỉ máy chủ bị từ chối.');
     return entries[0].address;
   }
+  async function socketAddress(host,port) {
+    if(allowed.has(`${host}:${port}`)) return address(host);
+    if(!publicIPv4(host)) return null;
+    // Some clients replace the approved domain with its resolved IPv4 address.
+    // Accept only addresses currently returned by DNS for an approved endpoint.
+    const candidates=[...allowed].filter(target=>target.endsWith(`:${port}`)).map(target=>target.slice(0,target.lastIndexOf(':')));
+    const checks=await Promise.allSettled(candidates.map(async name=>{
+      const entries=await resolve(name,{all:true,family:4});
+      return entries.length && entries.every(entry=>publicIPv4(entry.address)) && entries.some(entry=>entry.address===host);
+    }));
+    return checks.some(check=>check.status==='fulfilled' && check.value) ? host : null;
+  }
   app.disable('x-powered-by');
   app.get('/healthz',(req,res)=>res.json({ok:true,network:true}));
   app.post('/http',express.json({limit:'512kb'}),async(req,res)=>{
@@ -53,9 +65,10 @@ export function createGateway({webRoot=process.env.WEB_ROOT || path.join(root,'w
   server.on('upgrade',async(req,socket,head)=>{
     try {
       const url=new URL(req.url,'http://local'), host=url.searchParams.get('host')?.toLowerCase(), port=Number(url.searchParams.get('port'));
-      if(url.pathname!=='/socket' || !sameOrigin(req) || !Number.isInteger(port) || !allowed.has(`${host}:${port}`)) {socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');return;}
+      if(url.pathname!=='/socket' || !sameOrigin(req) || !Number.isInteger(port) || port<1 || port>65535 || (!allowed.has(`${host}:${port}`) && !publicIPv4(host))) {socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');return;}
       if(active>=8){socket.end('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\n\r\n');return;}
-      const ip=await address(host);
+      const ip=await socketAddress(host,port);
+      if(!ip){socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');return;}
       if(socket.destroyed) return;
       wsServer.handleUpgrade(req,socket,head,ws=>{
         active++; let done=false;
