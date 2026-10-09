@@ -34,6 +34,27 @@ text=main.read_text(encoding='utf-8')
 text='import networkNatives from "../libjs/network.js";\n'+text
 text=text.replace('natives: {','natives: {\n            ...networkNatives,',1)
 main.write_text(text,encoding='utf-8')
+# Browser physical punctuation keys were absent, so TextBox never received '.'.
+key_script=upstream/'web/src/key.js'
+text=key_script.read_text(encoding='utf-8')
+text=text.replace("export const codeMap = {", """export const codeMap = {
+    'Period': 190,
+    'Comma': 188,
+    'Semicolon': 186,
+    'Quote': 222,
+    'Slash': 191,
+    'Backslash': 220,
+    'BracketLeft': 219,
+    'BracketRight': 221,
+    'Minus': 189,
+    'Equal': 187,
+    'Backquote': 192,
+    'NumpadDecimal': 110,
+    'NumpadAdd': 107,
+    'NumpadSubtract': 109,
+    'NumpadEnter': 13,""")
+assert "'Period': 190" in text
+key_script.write_text(text,encoding='utf-8')
 page=upstream/'web/index.html'
 text=page.read_text(encoding='utf-8').replace('<title>freej2me-web</title>','<title>J2ME Online</title>')
 text=text.replace('<h1>freej2me-web</h1>','<h1>J2ME Online</h1><p>Chọn file JAR trên điện thoại để chơi. File game và dữ liệu lưu trong trình duyệt của bạn.</p>')
