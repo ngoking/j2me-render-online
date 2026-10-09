@@ -38,3 +38,26 @@ page=upstream/'web/index.html'
 text=page.read_text(encoding='utf-8').replace('<title>freej2me-web</title>','<title>J2ME Online</title>')
 text=text.replace('<h1>freej2me-web</h1>','<h1>J2ME Online</h1><p>Chọn file JAR trên điện thoại để chơi. File game và dữ liệu lưu trong trình duyệt của bạn.</p>')
 page.write_text(text,encoding='utf-8')
+
+# Fetch the small emulator JAR once instead of issuing many remote range reads.
+# /str is CheerpJ's transient, read-only Java filesystem.
+library_loader = '''
+async function loadEmulatorLibrary() {
+    const response = await fetch("/freej2me-web.jar", {signal: AbortSignal.timeout(60000)});
+    if (!response.ok) throw new Error("Could not download emulator: HTTP " + response.status);
+    cheerpOSAddStringFile("/str/freej2me-web.jar", new Uint8Array(await response.arrayBuffer()));
+    return cheerpjRunLibrary("/str/freej2me-web.jar");
+}
+'''
+for name in ['launcher.js', 'main.js']:
+    script = upstream/'web/src'/name
+    text = script.read_text(encoding='utf-8')
+    text = text.replace('cheerpjRunLibrary(cheerpjWebRoot+"/freej2me-web.jar")', 'loadEmulatorLibrary()')
+    text += library_loader
+    if name == 'launcher.js':
+        text = text.replace('    lib = await loadEmulatorLibrary();', '    document.getElementById("loading").textContent = "Đang tải bộ giả lập...";\n    lib = await loadEmulatorLibrary();')
+        text = text.replace('main();', '''main().catch(error => {
+    console.error(error);
+    document.getElementById("loading").textContent = "Không tải được giả lập: " + error.message;
+});''')
+    script.write_text(text, encoding='utf-8')

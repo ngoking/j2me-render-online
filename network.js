@@ -28,7 +28,7 @@ export default {
         s.queue.push(bytes); s.size+=bytes.length; wake(s);
       }
     };
-    s.ws.onerror=()=>{fail(s,'Không mở được cầu nối mạng Render.');clearTimeout(timer);finish();};
+    s.ws.onerror=()=>{fail(s,'Không mở được cầu nối WebSocket tới '+host+':'+port+'.');clearTimeout(timer);finish();};
     s.ws.onclose=()=>{s.ended=true;clearTimeout(timer);wake(s);finish();};
     await ready;
     if(s.ended && !s.error) s.error='Máy chủ đóng kết nối.';
